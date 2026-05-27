@@ -1,13 +1,19 @@
 import os
 import json
-import google.generativeai as genai
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
 
+try:
+    import google.generativeai as genai
+    _GENAI_AVAILABLE = True
+except Exception:
+    genai = None  # type: ignore[assignment]
+    _GENAI_AVAILABLE = False
+
 _api_key = os.environ.get("GEMINI_API_KEY", "")
-if _api_key:
+if _api_key and _GENAI_AVAILABLE:
     genai.configure(api_key=_api_key)
 
 AGENT_INSTRUCTIONS: Dict[str, str] = {
@@ -100,7 +106,7 @@ class AgentOrchestrator:
         prompt = f"{instructions}\n\nInput payload:\n{json.dumps(payload, indent=2)}\n\nRespond ONLY with valid JSON."
 
         api_key = os.environ.get("GEMINI_API_KEY", "")
-        if not api_key:
+        if not api_key or not _GENAI_AVAILABLE:
             return self._mock_response(agent_role, payload)
 
         try:
